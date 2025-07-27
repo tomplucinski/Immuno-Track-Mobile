@@ -1,21 +1,31 @@
-// EmailSignIn.tsx
-import React, { useState } from 'react';
-import { View, TextInput, Button, Text, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from './firebase';
+import React, { useState } from 'react';
+import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
+import { auth } from '../../firebase';
+
+// If you have defined your navigation stack types
+type RootStackParamList = {
+  Home: undefined;
+  SignIn: undefined;
+};
 
 const EmailSignIn: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
 
+  const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
+
   const handleSignIn = async () => {
     setError('');
     try {
-        const result = await signInWithEmailAndPassword(auth, email, password);
-        console.log('Success response', result)
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      console.log('Success response', result);
+      navigation.navigate('Home'); // 👈 Redirect to Home screen
     } catch (err: any) {
-        console.error('Error signing in with email:', err);
+      console.error('Error signing in with email:', err);
       setError(err.message);
     }
   };
