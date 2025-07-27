@@ -1,12 +1,12 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import AuthExample from './AuthExample';
+import { StyleSheet, View } from 'react-native';
 import GoogleSignInButton from './GoogleSignIn';
+import EmailSignIn from './EmailSignIn';
 
 export default function App() {
    return (
     <View style={styles.container}>
       <GoogleSignInButton />
+      <EmailSignIn />
     </View>
   );
 }

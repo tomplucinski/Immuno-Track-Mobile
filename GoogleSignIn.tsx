@@ -1,79 +1,73 @@
+// YourComponent.tsx (or .js)
 import React, { useEffect } from 'react';
-import { TouchableOpacity, View, Text, StyleSheet, Image } from 'react-native';
+import { Button, View, Text } from 'react-native';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
-import { auth } from './firebase';
+import { auth } from './firebase'; // Your initialized Firebase auth instance
 
+// This is important for Expo to handle web browser redirects
 WebBrowser.maybeCompleteAuthSession();
 
-export default function GoogleSignInButton() {
+const GoogleSignInButton = () => {
+  // Replace these with your actual client IDs
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: 'YOUR_EXPO_CLIENT_ID.apps.googleusercontent.com',
-    iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
-    androidClientId: 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
-    scopes: ['profile', 'email'],
+    clientId: 'TBD',
+    iosClientId: 'TBD',
+    scopes: ['profile', 'email'], // Request user's profile and email
   });
 
+  
   useEffect(() => {
-    async function signInWithGoogleNative() {
-      try {
-        if (response?.type === 'success' && response.authentication?.idToken) {
-          const { idToken } = response.authentication;
-          const googleCredential = GoogleAuthProvider.credential(idToken);
-          const userCredential = await signInWithCredential(auth, googleCredential);
-          console.log("✅ Signed in with Firebase:", userCredential.user.email);
-        }
-      } catch (error: any) {
-        console.error("❌ Firebase sign-in error:", error.code, error.message);
-      }
-    }
-
+      console.log('Google Auth response:', response);
+    // This effect runs whenever 'response' changes (after a login attempt)
     if (response?.type === 'success') {
-      signInWithGoogleNative();
+      const { authentication } = response;
+      if (authentication?.accessToken) {
+        // Build a Firebase credential from the Google access token
+        const credential = GoogleAuthProvider.credential(authentication.idToken);
+
+        // Sign in with Firebase using the Google credential
+        signInWithCredential(auth, credential)
+          .then((userCredential) => {
+            // Signed in successfully!
+            const user = userCredential.user;
+            console.log('Firebase user signed in:', user.displayName);
+            // You can navigate or update UI here
+          })
+          .catch((error) => {
+            // Handle Errors here.
+            const errorCode = error.code;
+            const errorMessage = error.message;
+            console.error('Firebase Google Sign-In Error:', errorMessage);
+          });
+      }
+    } else if (response?.type === 'error') {
+        console.error('Google Auth Session Error:', response.error);
     }
   }, [response]);
 
-  return (
-    <TouchableOpacity
-      style={styles.buttonOutline}
-      disabled={!request}
-      onPress={() => promptAsync()}
-    >
-      <View style={styles.inner}>
-        <Image
-          source={{
-            uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png',
-          }}
-          style={styles.icon}
-        />
-        <Text style={styles.buttonOutlineText}>Sign in with Google</Text>
-      </View>
-    </TouchableOpacity>
-  );
-}
+  const handleSignIn = async () => {
+    console.log('Requesting Google sign-in...');
+    try {
+      const r = await promptAsync(); // Opens the Google login flow
+      console.log('Prompt Async Response:', r);
+    } catch (error) {
+      console.error("Error during promptAsync:", error);
+    }
+  };
 
-const styles = StyleSheet.create({
-  buttonOutline: {
-    borderColor: '#1976d2',
-    borderWidth: 1.5,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  buttonOutlineText: {
-    color: '#1976d2',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  inner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  icon: {
-    width: 20,
-    height: 20,
-    marginRight: 12,
-  },
-});
+  return (
+    <View>
+      <Button
+        title="Sign in with Google"
+        disabled={!request} // Disable button if request isn't ready
+        onPress={handleSignIn}
+      />
+      {/* You might display user status here */}
+      <Text>User status: {auth.currentUser ? auth.currentUser.displayName : 'Not signed in'}</Text>
+    </View>
+  );
+};
+
+export default GoogleSignInButton;
